@@ -41,4 +41,4 @@ curl --connect-timeout 10 -fsSL -o "$WORKDIR/angryoxide.tar.gz" "$DOWNLOAD_URL"
 tar -xf "$WORKDIR/angryoxide.tar.gz" -C "$WORKDIR"
 
 chmod +x "$WORKDIR/install.sh"
-sudo "$WORKDIR/install.sh"
+(cd "$WORKDIR" && sudo ./install.sh)
