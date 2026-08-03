@@ -24,12 +24,22 @@ esac
 
 CURL_TIMEOUT=(--connect-timeout 10 --max-time 30)
 
-DOWNLOAD_URL=$(curl "${CURL_TIMEOUT[@]}" -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-  | grep -o "\"browser_download_url\": *\"[^\"]*${ASSET_PATTERN}\"" \
-  | sed -E 's/.*"(https[^"]+)"/\1/')
+# Fetched separately from the grep/sed parse below: grep exits 1 on no
+# match even with pipefail unset for that reason alone, and with
+# set -o pipefail that failure would otherwise abort the script right
+# here (silently, since this is a command substitution assignment)
+# before the more useful "could not find a matching asset" message
+# below ever gets a chance to print.
+if ! RELEASE_JSON=$(curl "${CURL_TIMEOUT[@]}" -fsSL "https://api.github.com/repos/${REPO}/releases/latest"); then
+  echo "Failed to reach GitHub's API for ${REPO} (network issue, rate limit, or outage)." >&2
+  exit 1
+fi
+
+DOWNLOAD_URL=$(grep -o "\"browser_download_url\": *\"[^\"]*${ASSET_PATTERN}\"" <<< "$RELEASE_JSON" \
+  | sed -E 's/.*"(https[^"]+)"/\1/' || true)
 
 if [[ -z "$DOWNLOAD_URL" ]]; then
-  echo "Could not find a release asset matching ${ASSET_PATTERN}" >&2
+  echo "Could not find a release asset matching ${ASSET_PATTERN} in the latest ${REPO} release." >&2
   exit 1
 fi
 
