@@ -18,7 +18,7 @@ confirmation) and installed automatically.
 | `03-packages.sh` | Installs every package listed in `packages.txt` (ufw, gpsd, wordlists, seclists, bluez, kismet, etc), including `ufw` needed by the next step. |
 | `04-ssh-hardening.sh` | Runs `dpkg-reconfigure openssh-server` to regenerate any missing SSH host keys (Kali Pi images ship with the same baked-in keys otherwise); disables root login, empty passwords, and X11 forwarding; opens ufw rules for SSH, the landing page (80), the Kismet web UI (2501), flock-back (8000), and Raspyjack (8080), then enables ufw; disables password authentication **only if** an authorized key is already present. |
 | `05-kismet-group.sh` | Adds the current user to the `kismet` group. |
-| `06-kismet-config.sh` | Appends the Alfa/ADS-B/gpsd sources and logging settings to Kismet's config. |
+| `06-kismet-config.sh` | Appends the Alfa/ADS-B/Bluetooth/gpsd sources and logging settings to Kismet's config. |
 | `07-gpsd-config.sh` | Points `gpsd` at `/dev/ttyACM0` and enables `gpsd.service`. |
 | `08-kismet-boot-service.sh` | Installs `kismet-boot.service`, which makes sure gpsd is running before Kismet starts at boot. Kismet puts `wlan1` into monitor mode itself via its source config (step 06) - no separate `airmon-ng` call is needed. |
 | `09-kismet-alerts.sh` | Adds the OUI devicefound watchlist (from `config/kismet/kismet_alerts_ouis.conf`) to Kismet's alerts config. |

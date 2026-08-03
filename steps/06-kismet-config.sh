@@ -10,6 +10,7 @@ source lib/common.sh
 sudo sed -i '/^source=wlan1mon:name=Alfa$/d' /etc/kismet/kismet.conf
 ensure_line /etc/kismet/kismet.conf "source=wlan1:name=Alfa"
 ensure_line /etc/kismet/kismet.conf "source=rtladsb-0:name=ADS-B"
+ensure_line /etc/kismet/kismet.conf "source=hci0:name=Bluetooth"
 ensure_line /etc/kismet/kismet.conf "gps=gpsd:host=localhost,port=2947"
 
 ensure_line /etc/kismet/kismet_logging.conf "log_prefix=./.kismet"
