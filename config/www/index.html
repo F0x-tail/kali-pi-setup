@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>kali-pi-setup</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #111;
+    color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .card { text-align: center; }
+  h1 { margin-bottom: 1.5rem; }
+  ul { list-style: none; padding: 0; }
+  li { margin: 0.75rem 0; }
+  a {
+    color: #4da3ff;
+    font-size: 1.25rem;
+    text-decoration: none;
+  }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>kali-pi-setup</h1>
+  <ul>
+    <li><a id="kismet-link" href="#">Kismet</a></li>
+    <li><a id="raspyjack-link" href="#">Raspyjack</a></li>
+    <li><a id="flockback-link" href="#">flock-back</a></li>
+  </ul>
+</div>
+<script>
+  var host = window.location.hostname;
+  document.getElementById("kismet-link").href = "http://" + host + ":2501";
+  document.getElementById("raspyjack-link").href = "http://" + host + ":8000";
+  document.getElementById("flockback-link").href = "http://" + host + ":8001";
+</script>
+</body>
+</html>

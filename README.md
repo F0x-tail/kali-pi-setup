@@ -4,7 +4,7 @@ Bootstrap script for turning a fresh Kali Linux install (Raspberry Pi
 wardriving rig) into a configured box: NetworkManager, Kismet + gpsd for
 wifi/GPS logging, a boot-time monitor-mode service, an OUI alert
 watchlist, SSH hardening, and a set of external security tools cloned
-for manual setup.
+and installed automatically.
 
 ## What it does
 
@@ -12,31 +12,38 @@ for manual setup.
 
 | Step | What it does |
 |---|---|
-| `00-network-manager.sh` | Flips `managed=false` to `managed=true` under `[ifupdown]` in `NetworkManager.conf`, so NetworkManager controls interfaces. |
-| `01-system-upgrade.sh` | `apt update && apt full-upgrade -y && apt autoremove -y`. |
-| `02-packages.sh` | Installs every package listed in `packages.txt` (ufw, gpsd, wordlists, seclists, bluez, kismet, etc). |
-| `03-kismet-group.sh` | Adds the current user to the `kismet` group. |
-| `04-kismet-config.sh` | Appends the Alfa/ADS-B/gpsd sources and logging settings to Kismet's config. |
-| `05-gpsd-config.sh` | Points `gpsd` at `/dev/ttyACM0` and enables `gpsd.service`. |
-| `06-kismet-boot-service.sh` | Installs `kismet-boot.service`, which brings `wlan1` into monitor mode and starts gpsd at boot. |
-| `07-clone-repos.sh` | Clones (or pulls) every tool in `repos.txt` into `~/tools/<name>`. |
-| `08-kismet-alerts.sh` | Adds the OUI devicefound watchlist (from `config/kismet/kismet_alerts_ouis.conf`) to Kismet's alerts config. |
-| `09-ssh-authorized-keys.sh` | Installs the public keys from `config/ssh/authorized_keys` into `~/.ssh/authorized_keys`. |
-| `10-ssh-hardening.sh` | Disables root login, empty passwords, and X11 forwarding; opens the ufw SSH rule and enables ufw; disables password authentication **only if** an authorized key is already present. |
+| `00-system-upgrade.sh` | `apt update && apt full-upgrade -y && apt autoremove -y`. |
+| `01-network-manager.sh` | Flips `managed=false` to `managed=true` under `[ifupdown]` in `NetworkManager.conf`, so NetworkManager controls interfaces. |
+| `02-ssh-authorized-keys.sh` | Installs the public keys from `config/ssh/authorized_keys` into `~/.ssh/authorized_keys`. |
+| `03-packages.sh` | Installs every package listed in `packages.txt` (ufw, gpsd, wordlists, seclists, bluez, kismet, etc), including `ufw` needed by the next step. |
+| `04-ssh-hardening.sh` | Runs `dpkg-reconfigure openssh-server` to regenerate any missing SSH host keys (Kali Pi images ship with the same baked-in keys otherwise); disables root login, empty passwords, and X11 forwarding; opens ufw rules for SSH, the landing page (80), the Kismet web UI (2501), and tool web UIs (8000, 8001), then enables ufw; disables password authentication **only if** an authorized key is already present. |
+| `05-kismet-group.sh` | Adds the current user to the `kismet` group. |
+| `06-kismet-config.sh` | Appends the Alfa/ADS-B/gpsd sources and logging settings to Kismet's config. |
+| `07-gpsd-config.sh` | Points `gpsd` at `/dev/ttyACM0` and enables `gpsd.service`. |
+| `08-kismet-boot-service.sh` | Installs `kismet-boot.service`, which brings `wlan1` into monitor mode and starts gpsd at boot. |
+| `09-kismet-alerts.sh` | Adds the OUI devicefound watchlist (from `config/kismet/kismet_alerts_ouis.conf`) to Kismet's alerts config. |
+| `10-kismet-mac-filter.sh` | Adds a MAC exclusion list (from `config/kismet/kismet_filter_macs.conf`) to `kismet_filter.conf` via `kis_log_device_filter=phy,mac,block` - those devices stay tracked live but aren't written to the log. |
+| `11-clone-repos.sh` | Clones (or pulls) every tool in `repos.txt` into `~/tools/<name>`. |
+| `12-install-angryoxide.sh` | Downloads the latest AngryOxide release for the device's architecture (aarch64 on a Pi, x86_64 elsewhere) and runs its installer. |
+| `13-install-raspyjack.sh` | Runs Raspyjack's installer against the `~/tools/Raspyjack` clone from step 11. Skips the official docs' final `reboot` - `bootstrap.sh` prompts for one at the end instead. |
+| `14-install-flock-back.sh` | Creates flock-back's Python virtualenv in `~/tools/flock-back/src/venv` and installs its requirements. |
+| `15-install-chasing-your-tail.sh` | Installs Chasing-Your-Tail-NG's Python dependencies via pip, falling back to `--break-system-packages` if Kali's PEP 668 guard rejects a plain install. |
+| `16-landing-page.sh` | Installs `config/www/index.html` as nginx's default site and enables nginx. The page links to Kismet, Raspyjack, and flock-back, resolving the host dynamically so the links work from whatever address you reach the page at. |
 
 All steps are idempotent - re-running `bootstrap.sh` is safe and will not
 duplicate config entries.
 
-Tools cloned by `07-clone-repos.sh` (currently `flock-back`,
-`Chasing-Your-Tail-NG`, `AngryOxide`, `Raspyjack`) are **not** built or
-installed automatically - each has its own install steps documented in
-its own README.
+Steps 12-15 depend on `11-clone-repos.sh` having already cloned the
+corresponding tool into `~/tools/<name>` - they will fail with a clear
+error if run before it. Step `04-ssh-hardening.sh` depends on `03-packages.sh`
+having already installed `ufw` and on `02-ssh-authorized-keys.sh` having
+already installed any keys.
 
 ## Setup
 
 1. Before running, add your SSH public key(s) to
    `config/ssh/authorized_keys` (one per line) if they aren't already
-   there. This file is installed by step `09` before step `10` disables
+   there. This file is installed by step `02` before step `04` disables
    password authentication - without a key present, password auth is
    left alone instead of locking you out.
 2. Review `packages.txt` and `repos.txt` and adjust as needed.
@@ -65,7 +72,7 @@ Each file under `steps/` is a standalone script and can be run on its
 own, e.g. to re-apply just the Kismet alerts watchlist:
 
 ```bash
-./steps/08-kismet-alerts.sh
+./steps/09-kismet-alerts.sh
 ```
 
 ## Layout
@@ -74,10 +81,11 @@ own, e.g. to re-apply just the Kismet alerts watchlist:
 bootstrap.sh           entry point - runs steps/*.sh in order
 lib/common.sh           shared helpers (ensure_line, ensure_block, log)
 steps/                  numbered, idempotent setup scripts
-config/kismet/          Kismet OUI alert watchlist
+config/kismet/          Kismet OUI alert watchlist, MAC log-exclusion list
 config/scripts/         kismet-boot.sh, run at boot
 config/systemd/          kismet-boot.service unit file
 config/ssh/authorized_keys   SSH public keys installed onto the device
-packages.txt            apt packages installed by step 02
-repos.txt               external tool repos cloned by step 07
+config/www/index.html   landing page installed by step 16
+packages.txt            apt packages installed by step 03
+repos.txt               external tool repos cloned by step 11, installed by steps 12-15
 ```

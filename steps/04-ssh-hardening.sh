@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# Hardens sshd_config and opens the ufw SSH rule before enabling the
-# firewall, so nothing here can lock out remote access. Idempotent -
-# safe to re-run.
+# Hardens sshd_config and opens ufw rules for SSH, the landing page,
+# and the Kismet/tool web UIs before enabling the firewall, so nothing
+# here can lock out remote access. Idempotent - safe to re-run.
 set -euo pipefail
 
 SSHD_CONFIG=/etc/ssh/sshd_config
+
+# Regenerates any missing host keys - Kali Pi images are known to ship
+# with the same baked-in host keys across every install/clone. Run
+# before the sshd_config edits below since it restarts the ssh service.
+sudo dpkg-reconfigure openssh-server
 
 set_sshd_option() {
   local key="$1" value="$2"
@@ -27,6 +32,10 @@ else
 fi
 
 sudo ufw allow ssh
+sudo ufw allow 80/tcp    # landing page
+sudo ufw allow 2501/tcp  # Kismet web UI
+sudo ufw allow 8000/tcp  # Raspyjack web UI
+sudo ufw allow 8001/tcp  # flock-back web UI
 sudo ufw --force enable
 
 sudo systemctl reload ssh
