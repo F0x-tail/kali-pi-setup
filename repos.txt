@@ -1,0 +1,7 @@
+# dest_name|git_url
+# Cloned into ~/tools/<dest_name>. Each of these has its own install/build
+# steps documented in its README that bootstrap.sh does NOT run automatically.
+flock-back|https://github.com/F0x-tail/flock-back
+Chasing-Your-Tail-NG|https://github.com/ArgeliusLabs/Chasing-Your-Tail-NG
+AngryOxide|https://github.com/Ragnt/AngryOxide
+Raspyjack|https://github.com/F0x-tail/Raspyjack

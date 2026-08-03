@@ -1,0 +1,10 @@
+ufw
+gpsd
+wordlists
+seclists
+bb
+cmatrix
+bluez
+bluez-tools
+bluez-firmware
+kismet
