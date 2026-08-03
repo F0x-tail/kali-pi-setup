@@ -6,8 +6,8 @@ set -euo pipefail
 CYT_DIR="$HOME/tools/Chasing-Your-Tail-NG"
 
 if [[ ! -d "$CYT_DIR" ]]; then
-  echo "Expected $CYT_DIR to exist (cloned by steps/11-clone-repos.sh) - run that step first." >&2
-  exit 1
+  echo "$CYT_DIR not found - skipping (declined at step 11, or that step hasn't run yet)."
+  exit 0
 fi
 
 cd "$CYT_DIR"

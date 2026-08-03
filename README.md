@@ -2,9 +2,9 @@
 
 Bootstrap script for turning a fresh Kali Linux install (Raspberry Pi
 wardriving rig) into a configured box: NetworkManager, Kismet + gpsd for
-wifi/GPS logging, a boot-time monitor-mode service, an OUI alert
-watchlist, SSH hardening, and a set of external security tools cloned
-and installed automatically.
+wifi/GPS logging, a boot-time gpsd service, an OUI alert watchlist, SSH
+hardening, and a set of external security tools cloned (with
+confirmation) and installed automatically.
 
 ## What it does
 
@@ -20,10 +20,10 @@ and installed automatically.
 | `05-kismet-group.sh` | Adds the current user to the `kismet` group. |
 | `06-kismet-config.sh` | Appends the Alfa/ADS-B/gpsd sources and logging settings to Kismet's config. |
 | `07-gpsd-config.sh` | Points `gpsd` at `/dev/ttyACM0` and enables `gpsd.service`. |
-| `08-kismet-boot-service.sh` | Installs `kismet-boot.service`, which brings `wlan1` into monitor mode and starts gpsd at boot. |
+| `08-kismet-boot-service.sh` | Installs `kismet-boot.service`, which makes sure gpsd is running before Kismet starts at boot. Kismet puts `wlan1` into monitor mode itself via its source config (step 06) - no separate `airmon-ng` call is needed. |
 | `09-kismet-alerts.sh` | Adds the OUI devicefound watchlist (from `config/kismet/kismet_alerts_ouis.conf`) to Kismet's alerts config. |
 | `10-kismet-mac-filter.sh` | Adds a MAC exclusion list (from `config/kismet/kismet_filter_macs.conf`) to `kismet_filter.conf` via `kis_log_device_filter=phy,mac,block` - those devices stay tracked live but aren't written to the log. |
-| `11-clone-repos.sh` | Clones (or pulls) every tool in `repos.txt` into `~/tools/<name>`. |
+| `11-clone-repos.sh` | Asks `Install <name>? [y/N]` for each tool in `repos.txt`, then clones (or pulls) the ones you confirm into `~/tools/<name>`. Requires a terminal (reads the prompt from `/dev/tty`). |
 | `12-install-angryoxide.sh` | Downloads the latest AngryOxide release for the device's architecture (aarch64 on a Pi, x86_64 elsewhere) and runs its installer. |
 | `13-install-raspyjack.sh` | Symlinks `/root/Raspyjack` to the `~/tools/Raspyjack` clone from step 11 (the installer hardcodes that path) and runs Raspyjack's installer, which sets up its own boot-time autostart services. On a Raspberry Pi 5, also swaps the installer's `python3-rpi.gpio` for `python3-rpi-lgpio` (classic RPi.GPIO can't initialize the Pi 5's RP1 GPIO chip) and restarts the service. Skips the official docs' final `reboot` - `bootstrap.sh` reboots once at the very end instead. |
 | `14-install-flock-back.sh` | Creates flock-back's Python virtualenv in `~/tools/flock-back/src/venv` and installs its requirements. |
@@ -33,9 +33,10 @@ and installed automatically.
 All steps are idempotent - re-running `bootstrap.sh` is safe and will not
 duplicate config entries.
 
-Steps 12-15 depend on `11-clone-repos.sh` having already cloned the
-corresponding tool into `~/tools/<name>` - they will fail with a clear
-error if run before it. Step `04-ssh-hardening.sh` depends on `03-packages.sh`
+Steps 12-15 each check for their tool's clone under `~/tools/<name>` and
+skip with a message (rather than failing) if it's missing - whether
+because you declined it at the `11-clone-repos.sh` prompt or that step
+hasn't run yet. Step `04-ssh-hardening.sh` depends on `03-packages.sh`
 having already installed `ufw` and on `02-ssh-authorized-keys.sh` having
 already installed any keys.
 

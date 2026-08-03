@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Runs at boot via kismet-boot.service: brings wlan1 into monitor mode and
-# makes sure gpsd is up before Kismet starts looking for its sources.
+# Runs at boot via kismet-boot.service: makes sure gpsd is up before
+# Kismet starts looking for its sources. Kismet puts wlan1 into monitor
+# mode itself via its source config, so no airmon-ng call is needed here.
 set -euo pipefail
 
-airmon-ng start wlan1
 systemctl start gpsd.service

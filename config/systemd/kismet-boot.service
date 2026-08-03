@@ -1,5 +1,5 @@
 [Unit]
-Description=Bring wlan1 into monitor mode and ensure gpsd is running
+Description=Ensure gpsd is running before Kismet starts
 After=network-online.target gpsd.service
 Wants=network-online.target
 

@@ -4,7 +4,11 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source lib/common.sh
 
-ensure_line /etc/kismet/kismet.conf "source=wlan1mon:name=Alfa"
+# Kismet puts the source into monitor mode itself, so it's given the
+# raw interface (wlan1) rather than a pre-existing wlan1mon. Drop any
+# stale wlan1mon line from an earlier run before adding the new one.
+sudo sed -i '/^source=wlan1mon:name=Alfa$/d' /etc/kismet/kismet.conf
+ensure_line /etc/kismet/kismet.conf "source=wlan1:name=Alfa"
 ensure_line /etc/kismet/kismet.conf "source=rtladsb-0:name=ADS-B"
 ensure_line /etc/kismet/kismet.conf "gps=gpsd:host=localhost,port=2947"
 

@@ -5,6 +5,11 @@
 # tarball rather than being built from it.
 set -euo pipefail
 
+if [[ ! -d "$HOME/tools/AngryOxide" ]]; then
+  echo "$HOME/tools/AngryOxide not found - skipping (declined at step 11, or that step hasn't run yet)."
+  exit 0
+fi
+
 REPO="Ragnt/AngryOxide"
 
 case "$(uname -m)" in

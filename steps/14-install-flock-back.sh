@@ -6,8 +6,8 @@ set -euo pipefail
 FLOCKBACK_DIR="$HOME/tools/flock-back"
 
 if [[ ! -d "$FLOCKBACK_DIR" ]]; then
-  echo "Expected $FLOCKBACK_DIR to exist (cloned by steps/11-clone-repos.sh) - run that step first." >&2
-  exit 1
+  echo "$FLOCKBACK_DIR not found - skipping (declined at step 11, or that step hasn't run yet)."
+  exit 0
 fi
 
 cd "$FLOCKBACK_DIR/src"
