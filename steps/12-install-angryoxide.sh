@@ -13,12 +13,14 @@ fi
 REPO="Ragnt/AngryOxide"
 
 case "$(uname -m)" in
-  aarch64|arm64) ARCH=aarch64 ;;
-  x86_64|amd64) ARCH=x86_64 ;;
+  # Every non-x86_64 release asset carries a libc suffix (-gnu or
+  # -musl); there's no bare "angryoxide-linux-aarch64.tar.gz". Kali is
+  # glibc-based, hence -gnu. x86_64 is the one arch with an unsuffixed
+  # asset, which is also glibc-based.
+  aarch64|arm64) ASSET_PATTERN="angryoxide-linux-aarch64-gnu.tar.gz" ;;
+  x86_64|amd64) ASSET_PATTERN="angryoxide-linux-x86_64.tar.gz" ;;
   *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
 esac
-
-ASSET_PATTERN="angryoxide-linux-${ARCH}.tar.gz"
 
 CURL_TIMEOUT=(--connect-timeout 10 --max-time 30)
 
