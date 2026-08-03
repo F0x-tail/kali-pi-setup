@@ -9,4 +9,5 @@ for step in steps/*.sh; do
   bash "$step"
 done
 
-log "Done. A reboot is recommended so NetworkManager, group membership, and the new services take effect."
+log "Done. Rebooting so NetworkManager, group membership, and the new services take effect."
+sudo reboot

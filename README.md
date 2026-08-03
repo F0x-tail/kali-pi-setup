@@ -16,7 +16,7 @@ and installed automatically.
 | `01-network-manager.sh` | Flips `managed=false` to `managed=true` under `[ifupdown]` in `NetworkManager.conf`, so NetworkManager controls interfaces. |
 | `02-ssh-authorized-keys.sh` | Installs the public keys from `config/ssh/authorized_keys` into `~/.ssh/authorized_keys`. |
 | `03-packages.sh` | Installs every package listed in `packages.txt` (ufw, gpsd, wordlists, seclists, bluez, kismet, etc), including `ufw` needed by the next step. |
-| `04-ssh-hardening.sh` | Runs `dpkg-reconfigure openssh-server` to regenerate any missing SSH host keys (Kali Pi images ship with the same baked-in keys otherwise); disables root login, empty passwords, and X11 forwarding; opens ufw rules for SSH, the landing page (80), the Kismet web UI (2501), and tool web UIs (8000, 8001), then enables ufw; disables password authentication **only if** an authorized key is already present. |
+| `04-ssh-hardening.sh` | Runs `dpkg-reconfigure openssh-server` to regenerate any missing SSH host keys (Kali Pi images ship with the same baked-in keys otherwise); disables root login, empty passwords, and X11 forwarding; opens ufw rules for SSH, the landing page (80), the Kismet web UI (2501), flock-back (8000), and Raspyjack (8080), then enables ufw; disables password authentication **only if** an authorized key is already present. |
 | `05-kismet-group.sh` | Adds the current user to the `kismet` group. |
 | `06-kismet-config.sh` | Appends the Alfa/ADS-B/gpsd sources and logging settings to Kismet's config. |
 | `07-gpsd-config.sh` | Points `gpsd` at `/dev/ttyACM0` and enables `gpsd.service`. |
@@ -25,7 +25,7 @@ and installed automatically.
 | `10-kismet-mac-filter.sh` | Adds a MAC exclusion list (from `config/kismet/kismet_filter_macs.conf`) to `kismet_filter.conf` via `kis_log_device_filter=phy,mac,block` - those devices stay tracked live but aren't written to the log. |
 | `11-clone-repos.sh` | Clones (or pulls) every tool in `repos.txt` into `~/tools/<name>`. |
 | `12-install-angryoxide.sh` | Downloads the latest AngryOxide release for the device's architecture (aarch64 on a Pi, x86_64 elsewhere) and runs its installer. |
-| `13-install-raspyjack.sh` | Runs Raspyjack's installer against the `~/tools/Raspyjack` clone from step 11. Skips the official docs' final `reboot` - `bootstrap.sh` prompts for one at the end instead. |
+| `13-install-raspyjack.sh` | Symlinks `/root/Raspyjack` to the `~/tools/Raspyjack` clone from step 11 (the installer hardcodes that path) and runs Raspyjack's installer, which sets up its own boot-time autostart services. On a Raspberry Pi 5, also swaps the installer's `python3-rpi.gpio` for `python3-rpi-lgpio` (classic RPi.GPIO can't initialize the Pi 5's RP1 GPIO chip) and restarts the service. Skips the official docs' final `reboot` - `bootstrap.sh` reboots once at the very end instead. |
 | `14-install-flock-back.sh` | Creates flock-back's Python virtualenv in `~/tools/flock-back/src/venv` and installs its requirements. |
 | `15-install-chasing-your-tail.sh` | Installs Chasing-Your-Tail-NG's Python dependencies via pip, falling back to `--break-system-packages` if Kali's PEP 668 guard rejects a plain install. |
 | `16-landing-page.sh` | Installs `config/www/index.html` as nginx's default site and enables nginx. The page links to Kismet, Raspyjack, and flock-back, resolving the host dynamically so the links work from whatever address you reach the page at. |
@@ -59,12 +59,10 @@ cd kali-pi-setup
 ```
 
 Requires `sudo` privileges (you'll be prompted for your password).
-Reboot afterwards so NetworkManager, the `kismet` group membership, and
-the new systemd services all take effect:
-
-```bash
-sudo reboot
-```
+Once every step finishes, `bootstrap.sh` reboots the device itself so
+NetworkManager, the `kismet` group membership, and the new systemd
+services all take effect - if you're running this over SSH, that
+connection will drop at that point.
 
 ## Running a single step
 

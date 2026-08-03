@@ -2,6 +2,6 @@
 # Cloned into ~/tools/<dest_name> by steps/11-clone-repos.sh. Each tool's
 # own install/build is then run by its steps/1N-install-<name>.sh script.
 flock-back|https://github.com/F0x-tail/flock-back
-Chasing-Your-Tail-NG|https://github.com/ArgeliusLabs/Chasing-Your-Tail-NG
+Chasing-Your-Tail-NG|https://github.com/F0x-tail/Chasing-Your-Tail-NG
 AngryOxide|https://github.com/Ragnt/AngryOxide
 Raspyjack|https://github.com/F0x-tail/Raspyjack

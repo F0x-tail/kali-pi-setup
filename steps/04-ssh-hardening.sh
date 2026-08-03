@@ -34,8 +34,8 @@ fi
 sudo ufw allow ssh
 sudo ufw allow 80/tcp    # landing page
 sudo ufw allow 2501/tcp  # Kismet web UI
-sudo ufw allow 8000/tcp  # Raspyjack web UI
-sudo ufw allow 8001/tcp  # flock-back web UI
+sudo ufw allow 8000/tcp  # flock-back web UI (server.py default port)
+sudo ufw allow 8080/tcp  # Raspyjack web UI (web_server.py RJ_WEB_PORT default)
 sudo ufw --force enable
 
 sudo systemctl reload ssh
