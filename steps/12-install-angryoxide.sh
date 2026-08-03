@@ -20,7 +20,9 @@ esac
 
 ASSET_PATTERN="angryoxide-linux-${ARCH}.tar.gz"
 
-DOWNLOAD_URL=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+CURL_TIMEOUT=(--connect-timeout 10 --max-time 30)
+
+DOWNLOAD_URL=$(curl "${CURL_TIMEOUT[@]}" -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
   | grep -o "\"browser_download_url\": *\"[^\"]*${ASSET_PATTERN}\"" \
   | sed -E 's/.*"(https[^"]+)"/\1/')
 
@@ -33,7 +35,7 @@ WORKDIR=$(mktemp -d)
 trap 'rm -rf "$WORKDIR"' EXIT
 
 echo "Downloading $DOWNLOAD_URL"
-curl -fsSL -o "$WORKDIR/angryoxide.tar.gz" "$DOWNLOAD_URL"
+curl --connect-timeout 10 -fsSL -o "$WORKDIR/angryoxide.tar.gz" "$DOWNLOAD_URL"
 tar -xf "$WORKDIR/angryoxide.tar.gz" -C "$WORKDIR"
 
 chmod +x "$WORKDIR/install.sh"
