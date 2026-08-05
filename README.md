@@ -18,7 +18,7 @@ confirmation) and installed automatically.
 | `03-packages.sh` | Installs every package listed in `packages.txt` (ufw, gpsd, wordlists, seclists, bluez, kismet, etc), including `ufw` needed by the next step. |
 | `04-ssh-hardening.sh` | Runs `dpkg-reconfigure openssh-server` to regenerate any missing SSH host keys (Kali Pi images ship with the same baked-in keys otherwise); disables root login, empty passwords, and X11 forwarding; opens ufw rules for SSH, the landing page (80), the Kismet web UI (2501), flock-back (8000), and Raspyjack (8080), then enables ufw; disables password authentication **only if** an authorized key is already present. |
 | `05-kismet-group.sh` | Adds the current user to the `kismet` group. |
-| `06-kismet-config.sh` | Appends the Alfa/ADS-B/Bluetooth/gpsd sources and logging settings to Kismet's config. |
+| `06-kismet-config.sh` | Appends the Alfa/ADS-B/Bluetooth/gpsd sources and logging settings to Kismet's config. Points `log_prefix` at `~/kismet_logs` (creating it) rather than a relative path, since Kismet requires the directory to already exist and won't create it itself. |
 | `07-gpsd-config.sh` | Points `gpsd` at `/dev/ttyACM0` and enables `gpsd.service`. |
 | `08-kismet-boot-service.sh` | Installs `kismet-boot.service`, which makes sure gpsd is running before Kismet starts at boot. Kismet puts `wlan1` into monitor mode itself via its source config (step 06) - no separate `airmon-ng` call is needed. |
 | `09-kismet-alerts.sh` | Adds the OUI devicefound watchlist (from `config/kismet/kismet_alerts_ouis.conf`) to Kismet's alerts config. |
@@ -27,8 +27,9 @@ confirmation) and installed automatically.
 | `12-install-angryoxide.sh` | Downloads the latest AngryOxide release for the device's architecture (`aarch64-gnu` on a Pi, `x86_64` elsewhere - both glibc builds, matching Kali) and runs its installer. |
 | `13-install-raspyjack.sh` | Symlinks `/root/Raspyjack` to the `~/tools/Raspyjack` clone from step 11 (the installer hardcodes that path) and runs Raspyjack's installer, which sets up its own boot-time autostart services. On a Raspberry Pi 5, also swaps the installer's `python3-rpi.gpio` for `python3-rpi-lgpio` (classic RPi.GPIO can't initialize the Pi 5's RP1 GPIO chip) and restarts the service. Skips the official docs' final `reboot` - `bootstrap.sh` reboots once at the very end instead. |
 | `14-install-flock-back.sh` | Creates flock-back's Python virtualenv in `~/tools/flock-back/src/venv` and installs its requirements. |
-| `15-install-chasing-your-tail.sh` | Installs Chasing-Your-Tail-NG's Python dependencies via pip, falling back to `--break-system-packages` if Kali's PEP 668 guard rejects a plain install. |
+| `15-install-chasing-your-tail.sh` | Installs Chasing-Your-Tail-NG's Python dependencies via pip, falling back to `--break-system-packages` if Kali's PEP 668 guard rejects a plain install. Also points its `config.json`'s `kismet_logs` path (shipped hardcoded to an unrelated machine) at `~/kismet_logs`, and marks that file `skip-worktree` so future `git pull`s in step 11 don't fight the edit. |
 | `16-landing-page.sh` | Installs `config/www/index.html` as nginx's default site and enables nginx. The page links to Kismet, Raspyjack, and flock-back, resolving the host dynamically so the links work from whatever address you reach the page at. |
+| `17-home-launchers.sh` | Installs `config/home/*.sh` into your home folder as `~/start-kismet.sh`, `~/start-flock-back.sh`, and `~/start-chasing-your-tail.sh` - one command each instead of remembering venvs, `cd`s, and flags. |
 
 All steps are idempotent - re-running `bootstrap.sh` is safe and will not
 duplicate config entries.
@@ -74,6 +75,32 @@ own, e.g. to re-apply just the Kismet alerts watchlist:
 ./steps/09-kismet-alerts.sh
 ```
 
+## Starting the tools
+
+After `bootstrap.sh` finishes, three launcher scripts are in your home
+folder:
+
+```bash
+~/start-kismet.sh              # kismet --daemonize --no-ncurses --silent --no-line-wrap
+~/start-flock-back.sh [flags]  # flock-back -w -k -b hci0, always
+~/start-chasing-your-tail.sh   # Chasing-Your-Tail-NG's core monitoring
+```
+
+`start-kismet.sh` runs Kismet detached in the background with its
+interactive console wrapper disabled - flags chosen for non-interactive
+use per `kismet_server.cc`'s own `--help` text. Web UI stays at
+`http://localhost:2501`; `pkill kismet` to stop it.
+
+`start-flock-back.sh` always passes `-w` (wardriver mode - auto-detects
+every monitor adapter itself) and `-k` (poll Kismet's REST API and
+signature-match against what it's already seen - start Kismet first).
+Any extra arguments are passed straight to `main.py` (e.g.
+`~/start-flock-back.sh -g /dev/ttyACM0`) - see
+`~/tools/flock-back/src/main.py`'s `-h` output for the full flag list.
+
+Chasing-Your-Tail-NG needs `python3 setup_credentials.py` run once from
+`~/tools/Chasing-Your-Tail-NG` first if you want its WiGLE API lookups.
+
 ## Layout
 
 ```
@@ -85,6 +112,7 @@ config/scripts/         kismet-boot.sh, run at boot
 config/systemd/          kismet-boot.service unit file
 config/ssh/authorized_keys   SSH public keys installed onto the device
 config/www/index.html   landing page installed by step 16
+config/home/            ~/start-*.sh launcher scripts installed by step 17
 packages.txt            apt packages installed by step 03
 repos.txt               external tool repos cloned by step 11, installed by steps 12-15
 ```
